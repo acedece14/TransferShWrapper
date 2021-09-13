@@ -6,4 +6,4 @@ Simple drag and drop files to application form
 
 ![alt text](github\screenshot01.png )
 
-# [DOWNLOAD](bin\TransferShWrapper.exe)
+# [DOWNLOAD](https://github.com/acedece14/TransferShWrapper/raw/master/bin/TransferShWrapper.exe)
