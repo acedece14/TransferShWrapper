@@ -46,8 +46,8 @@ task fatJar(type: Jar) {
 
 launch4j {
     mainClassName = 'by.katz.Main'
-    icon = "${projectDir}/src/main/resources/transferShWrapper.ico"
     outfile = "TransferShWrapper.exe"
+    icon = "${projectDir}\\src\\main\\resources\\transferShWrapper.ico"
     copyConfigurable = []
     jarTask = project.tasks.fatJar
 }

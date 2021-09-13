@@ -7,7 +7,7 @@ class Main {
 
     public static void main(String[] args) {
         ThemeSetter.apply(3);
-        new FormMain();
+        new FormMain(args);
         showTransfersInDb();
     }
 

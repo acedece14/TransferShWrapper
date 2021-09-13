@@ -17,6 +17,7 @@ import java.awt.dnd.DropTarget;
 import java.awt.dnd.DropTargetDropEvent;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -38,7 +39,8 @@ public class FormMain extends JFrame {
     private JButton btnShowInTC;
     private JButton btnCopyToCBZip;
 
-    public FormMain() {
+    public FormMain(String[] args) {
+        setTitle("Wrapper for transfer.sh");
         setContentPane(pnlMain);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setSize(800, 500);
@@ -79,15 +81,22 @@ public class FormMain extends JFrame {
             }
         });
         setVisible(true);
+        if (args.length > 0) {
+            List<File> files = new ArrayList<>();
+            for (String filePath : args)
+                files.add(new File(filePath));
+            uploadFiles(files);
+        }
+
     }
 
-    private void uploadFiles(List<File> droppedFiles) throws InterruptedException {
+    private void uploadFiles(List<File> droppedFiles) {
 
         AtomicBoolean hasNewFiles = new AtomicBoolean(false);
         ExecutorService pool = Executors.newFixedThreadPool(droppedFiles.size());
         CountDownLatch cdl = new CountDownLatch(droppedFiles.size());
 
-        for (File file : droppedFiles) {
+        for (File file : droppedFiles)
             pool.submit(() -> {
                 setStatus("Upload " + file.getName());
                 Transfer transfer = new Transfer(file);
@@ -98,8 +107,7 @@ public class FormMain extends JFrame {
                 updateTranferTable();
                 cdl.countDown();
             });
-        }
-        cdl.await();
+        try { cdl.await(); } catch (InterruptedException ignored) { }
         pool.shutdown();
     }
 
@@ -180,7 +188,7 @@ public class FormMain extends JFrame {
         pnlMain.setLayout(new GridLayoutManager(3, 1, new Insets(0, 0, 0, 0), -1, -1));
         final JPanel panel1 = new JPanel();
         panel1.setLayout(new GridLayoutManager(1, 5, new Insets(0, 0, 0, 0), -1, -1));
-        pnlMain.add(panel1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        pnlMain.add(panel1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         btnCopy = new JButton();
         btnCopy.setText("Copy to CB");
         panel1.add(btnCopy, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
