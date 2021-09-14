@@ -66,31 +66,32 @@ public class FormMain extends JFrame {
         });
         btnDelete.addActionListener(e -> {
             Transfer transfer = getSelectedTransfer();
-            if (transfer != null)
-                transfer.deleteFromServer();
-            updateTranferTable();
+            if (transfer != null && transfer.deleteFromServer())
+                updateTranferTable();
         });
         pnlMain.setDropTarget(new DropTarget() {
             public synchronized void drop(DropTargetDropEvent evt) {
                 try {
                     evt.acceptDrop(DnDConstants.ACTION_COPY);
                     Object s = evt.getTransferable().getTransferData(DataFlavor.javaFileListFlavor);
-                    List<File> droppedFiles = (List<File>) s;
-                    uploadFiles(droppedFiles);
+                    //noinspection unchecked
+                    uploadFiles((List<File>) s);
                 } catch (Exception ex) { ex.printStackTrace(); }
             }
         });
         setVisible(true);
         if (args.length > 0) {
-            List<File> files = new ArrayList<>();
+            List<File> filesToUpload = new ArrayList<>();
             for (String filePath : args)
-                files.add(new File(filePath));
-            uploadFiles(files);
+                filesToUpload.add(new File(filePath));
+            uploadFiles(filesToUpload);
         }
 
     }
 
     private void uploadFiles(List<File> droppedFiles) {
+
+        this.setEnabled(false);
 
         AtomicBoolean hasNewFiles = new AtomicBoolean(false);
         ExecutorService pool = Executors.newFixedThreadPool(droppedFiles.size());
@@ -109,6 +110,8 @@ public class FormMain extends JFrame {
             });
         try { cdl.await(); } catch (InterruptedException ignored) { }
         pool.shutdown();
+
+        this.setEnabled(true);
     }
 
     private Transfer getSelectedTransfer() {
@@ -127,10 +130,10 @@ public class FormMain extends JFrame {
             final Object[] obj = new Object[]{
                     t.getFile().getName(),
                     t.getUrl(),
-                    t.getSize(),
+                    t.getFormattedSize(),
                     t.getFormattedDate()
             };
-            model.addRow(obj);
+            model.insertRow(0, obj);
         }
     }
 
@@ -139,16 +142,15 @@ public class FormMain extends JFrame {
         tblTransfers.setSelectionMode(SINGLE_SELECTION);
 
         final DefaultTableModel model = (DefaultTableModel) tblTransfers.getModel();
-
-        model.addColumn("Filepath");
+        model.addColumn("Filename");
         model.addColumn("Url");
         model.addColumn("Size");
-        model.addColumn("DateTime");
+        model.addColumn("Upload time");
 
         final TableColumnModel columnModel = tblTransfers.getColumnModel();
         columnModel.getColumn(INDEX_FILE).setPreferredWidth(150);
-        columnModel.getColumn(INDEX_URL).setPreferredWidth(150);
-        columnModel.getColumn(INDEX_SIZE).setPreferredWidth(20);
+        columnModel.getColumn(INDEX_URL).setPreferredWidth(250);
+        columnModel.getColumn(INDEX_SIZE).setPreferredWidth(10);
         columnModel.getColumn(INDEX_DATETIME).setPreferredWidth(60);
 
         tblTransfers.addMouseListener(new MouseListenerImpl() {});
