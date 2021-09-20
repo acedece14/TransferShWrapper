@@ -8,6 +8,8 @@ import org.jsoup.Jsoup;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.net.URLConnection;
+import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -24,26 +26,31 @@ class Transfer {
     private String urlDelete;
     private long size;
     private long uploadTime;
+    private String mimeType;
 
     public Transfer(File file) {
         this.file = file;
         this.size = file.length();
         this.uploadTime = new Date().getTime();
+
+        try { this.mimeType = Files.probeContentType(file.toPath()); } catch (IOException ignored) { }
+        if (mimeType == null)
+            mimeType = URLConnection.guessContentTypeFromName(file.getName());
+        if (mimeType == null)
+            mimeType = "text/plain";
     }
 
 
-    public void uploadFileToServer() {
-        try {
-            String filename = file.getName();
-            Connection.Response response = Jsoup.connect(URL + filename)
-                .data("file", filename, new FileInputStream(file))
-                .method(Connection.Method.PUT)
-                .execute();
-
-            urlDelete = response.header("X-Url-Delete");
-            url = response.parse().body().text();
-            System.out.println();
-        } catch (IOException e) { e.printStackTrace(); }
+    public void uploadFileToServer() throws IOException {
+        String filename = file.getName();
+        Connection.Response response = Jsoup.connect(URL + filename)
+            .data("file", filename, new FileInputStream(file))
+            .method(Connection.Method.PUT)
+            .header("Content-Type", mimeType)
+            .execute();
+        urlDelete = response.header("X-Url-Delete");
+        url = response.parse().body().text();
+        System.out.println();
     }
 
     @SuppressWarnings("UnusedReturnValue")
@@ -64,14 +71,16 @@ class Transfer {
         return "Transfer{" +
             "file=" + file.getPath() +
             ",\nurl='" + url + '\'' +
-            ",\nurlZip='" + getUrlZip() + "%29.zip" + '\'' +
+            ",\nurlZip='" + getUrlZip() + '\'' +
             ",\nurlDelete='" + urlDelete + '\'' +
             ",\nsize=" + getFormattedSize() +
+            ",\nmimeType='" + mimeType + '\'' +
             ",\nuploadTime=" + getFormattedDate() +
             '}';
     }
 
-    public String getFormattedSize() {
+
+    public static String getFormattedSize(long size) {
         if (size < 1_000)
             return size + " b";
         if (size < 1_000_000)
@@ -81,7 +90,11 @@ class Transfer {
         return String.format("%.2f", (size / 1_000_000_000.0)) + " G";
     }
 
+    public String getFormattedSize() {
+        return getFormattedSize(size);
+    }
+
     public String getFormattedDate() { return sdf.format(new Date(uploadTime)); }
 
-    public String getUrlZip() { return url.replace("transfer.sh", "transfer.sh/%28"); }
+    public String getUrlZip() { return url.replace("transfer.sh", "transfer.sh/%28") + "%29.zip"; }
 }
