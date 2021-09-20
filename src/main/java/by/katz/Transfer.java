@@ -2,6 +2,7 @@ package by.katz;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.Setter;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 
@@ -26,6 +27,7 @@ class Transfer {
     private String urlDelete;
     private long size;
     private long uploadTime;
+    @Setter
     private String mimeType;
 
     public Transfer(File file) {
@@ -90,9 +92,7 @@ class Transfer {
         return String.format("%.2f", (size / 1_000_000_000.0)) + " G";
     }
 
-    public String getFormattedSize() {
-        return getFormattedSize(size);
-    }
+    public String getFormattedSize() { return getFormattedSize(size); }
 
     public String getFormattedDate() { return sdf.format(new Date(uploadTime)); }
 
