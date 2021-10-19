@@ -6,15 +6,17 @@ plugins {
 }
 
 group 'TransferShWrapper'
-version '1.0-SNAPSHOT'
+version '1.1'
 
-sourceCompatibility = 1.8
+final def version = version
+final def projectName = rootProject.name
+
+sourceCompatibility = 11
 
 repositories {
-    mavenCentral()    
+    mavenCentral()
     flatDir dirs: "${rootDir}/lib"
 }
-
 
 task fatJar(type: Jar) {
 
@@ -33,7 +35,7 @@ task fatJar(type: Jar) {
     exclude '*.txt'
     exclude '*.html'
 
-    classifier = 'all'
+    classifier = ''
     manifest {
         attributes 'Main-Class': 'by.katz.Main'
     }
@@ -46,12 +48,20 @@ task fatJar(type: Jar) {
 
 launch4j {
     mainClassName = 'by.katz.Main'
-    outfile = "TransferShWrapper.exe"
+    outfile = "${projectName}-${version}.exe"
+    //outfile = "TransferShWrapper.exe"
     icon = "${projectDir}\\src\\main\\resources\\transferShWrapper.ico"
     copyConfigurable = []
     jarTask = project.tasks.fatJar
 }
 
+task publish {
+    dependsOn 'createExe'
+    tasks.findByName('createExe').doLast {
+        ant.move file: "${buildDir}/libs/${projectName}-${version}.jar", todir: "bin"
+        ant.move file: "${buildDir}/launch4j/${projectName}-${version}.exe", todir: "bin"
+    }
+}
 
 dependencies {
     implementation 'org.projectlombok:lombok:1.18.20'
@@ -60,9 +70,9 @@ dependencies {
     //implementation group: 'org.jsoup', name: 'jsoup', version: '1.14.3'
     implementation 'org.apache.httpcomponents:httpclient:4.5.13'
     // look and feel
+    //implementation group: 'com.jtattoo', name: 'JTattoo', version: '1.6.13'
     implementation group: 'com.formdev', name: 'flatlaf', version: '1.6'
     implementation group: 'com.formdev', name: 'flatlaf-intellij-themes', version: '1.6'
-    implementation group: 'com.jtattoo', name: 'JTattoo', version: '1.6.13'
     implementation files('lib/forms_rt.jar')
     // test
     testCompileOnly 'org.projectlombok:lombok:1.18.22'

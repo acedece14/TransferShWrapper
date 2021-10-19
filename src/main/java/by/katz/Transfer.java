@@ -4,15 +4,16 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.java.Log;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -61,14 +62,14 @@ class Transfer {
     }
 
     public void uploadFileToServer() throws IOException {
-        final HttpPut http = new HttpPut("https://transfer.sh/" + file.getName());
-        final byte[] bytes = Files.readAllBytes(file.toPath());
+        final var http = new HttpPut("https://transfer.sh/" + file.getName());
+        final var bytes = Files.readAllBytes(file.toPath());
         log.info("Upload file: " + file.getAbsolutePath());
-        final HttpEntity entity = new ByteArrayEntity(bytes);
+        final var entity = new ByteArrayEntity(bytes);
         http.setEntity(entity);
 
-        final HttpResponse resp = httpClient.execute(http);
-        final InputStream in = resp.getEntity().getContent();
+        final var resp = httpClient.execute(http);
+        final var in = resp.getEntity().getContent();
         url = new BufferedReader(
               new InputStreamReader(in, StandardCharsets.UTF_8))
               .lines()

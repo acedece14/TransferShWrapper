@@ -40,17 +40,17 @@ public class DB {
     }
 
     private void readDb() {
-        try (FileReader fileReader = new FileReader(DB_FILE)) {
+        try (var fileReader = new FileReader(DB_FILE)) {
             transfers = new Gson().fromJson(fileReader, TYPE_LIST_TRANSFER);
         } catch (IOException e) { e.printStackTrace(); }
     }
 
     private synchronized void saveDb() {
-        String json = new GsonBuilder()
+        var json = new GsonBuilder()
               .setPrettyPrinting()
               .create()
               .toJson(transfers);
-        try (FileWriter fw = new FileWriter(DB_FILE)) {
+        try (var fw = new FileWriter(DB_FILE)) {
             fw.write(json);
         } catch (IOException e) { e.printStackTrace(); }
     }

@@ -10,7 +10,6 @@ import com.intellij.uiDesigner.core.Spacer;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableColumnModel;
 import java.awt.*;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.StringSelection;
@@ -19,6 +18,8 @@ import java.awt.dnd.DropTarget;
 import java.awt.dnd.DropTargetDropEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,7 +27,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
@@ -72,31 +72,43 @@ public class FormMain extends JFrame {
             public synchronized void drop(DropTargetDropEvent evt) {
                 try {
                     evt.acceptDrop(DnDConstants.ACTION_COPY);
-                    Object obj = evt.getTransferable().getTransferData(DataFlavor.javaFileListFlavor);
+                    var obj = evt.getTransferable().getTransferData(DataFlavor.javaFileListFlavor);
                     //noinspection unchecked
                     uploadFiles((List<File>) obj);
                 } catch (Exception ex) { ex.printStackTrace(); }
             }
         });
         setupPopup();
+        addWindowListener(new WindowAdapter() {
+            @Override public void windowClosing(WindowEvent e) {
+                super.windowClosing(e);
+                System.exit(1);
+            }
+        });
         setVisible(true);
+        uploadFromExternal(args);
+    }
+
+
+    private void uploadFromExternal(String[] args) {
         if (args.length > 0) {
-            List<File> filesToUpload = new ArrayList<>();
-            for (String filePath : args)
+            var filesToUpload = new ArrayList<File>();
+            for (var filePath : args)
                 filesToUpload.add(new File(filePath));
             uploadFiles(filesToUpload);
         }
     }
 
+
     private static void addActionToPopup(JPopupMenu menu, String caption, ActionListener a) {
-        JMenuItem item = new JMenuItem();
+        var item = new JMenuItem();
         item.addActionListener(a);
         item.setText(caption);
         menu.add(item);
     }
 
     private void setupPopup() {
-        JPopupMenu menu = new JPopupMenu();
+        var menu = new JPopupMenu();
 
         addActionToPopup(menu, "Copy to cb", e -> onCopyCbClick());
         addActionToPopup(menu, "Copy to zb (zip)", e -> onCopyCbZipClick());
@@ -116,7 +128,7 @@ public class FormMain extends JFrame {
     }
 
     private void onDeleteClick() {
-        List<Transfer> transfers = getSelectedTransfers();
+        var transfers = getSelectedTransfers();
         new Thread(() -> transfers.forEach(t -> {
             if (t.deleteFromServer()) {
                 DB.get().removeTransfer(t);
@@ -126,7 +138,7 @@ public class FormMain extends JFrame {
     }
 
     private void onBtnShowInTcClick() {
-        List<Transfer> transfers = getSelectedTransfers();
+        var transfers = getSelectedTransfers();
         if (transfers.size() > 0)
             showInTC(transfers.get(0)
                   .getFile()
@@ -134,26 +146,26 @@ public class FormMain extends JFrame {
     }
 
     private void onCopyCbZipClick() {
-        List<Transfer> transfers = getSelectedTransfers();
+        var transfers = getSelectedTransfers();
         if (transfers.size() > 0) {
             StringBuilder tmp = new StringBuilder();
-            for (Transfer t : transfers)
+            for (var t : transfers)
                 tmp.append(t.getUrlZip()).append("\n");
             copyToCB(tmp.toString());
         }
     }
 
     private void onCopyCbClick() {
-        List<Transfer> transfers = getSelectedTransfers();
+        var transfers = getSelectedTransfers();
         if (transfers.size() > 0) {
-            StringBuilder tmp = new StringBuilder();
+            var tmp = new StringBuilder();
             for (Transfer t : transfers)
                 tmp.append(t.getUrl()).append("\n");
             copyToCB(tmp.toString());
         }
     }
 
-    private void uploadFiles(List<File> files) {
+    public void uploadFiles(List<File> files) {
 
         while (files.stream().anyMatch(File::isDirectory))
             files = unpackFilePaths(files);
@@ -163,9 +175,8 @@ public class FormMain extends JFrame {
             long totalSize = files.stream()
                   .mapToLong(File::length)
                   .sum();
-            String msg = "You want to upload " + files.size() + " files, size: " + getFormattedSize(totalSize);
-            int input = JOptionPane.showConfirmDialog(null, msg,
-                  "Confirm", JOptionPane.YES_NO_OPTION);
+            var msg = "You want to upload " + files.size() + " files, size: " + getFormattedSize(totalSize);
+            var input = JOptionPane.showConfirmDialog(null, msg, "Confirm", JOptionPane.YES_NO_OPTION);
             if (input == NO)
                 return;
         }
@@ -173,9 +184,9 @@ public class FormMain extends JFrame {
         //this.setEnabled(false);
         System.out.println("start upload files");
 
-        final AtomicBoolean hasNewFiles = new AtomicBoolean(false);
-        final ExecutorService pool = Executors.newFixedThreadPool(MAX_UPLOAD_THREADS);
-        final CountDownLatch cdl = new CountDownLatch(files.size());
+        final var hasNewFiles = new AtomicBoolean(false);
+        final var pool = Executors.newFixedThreadPool(MAX_UPLOAD_THREADS);
+        final var cdl = new CountDownLatch(files.size());
 
         new Thread(() -> {
             int time = 0;
@@ -186,12 +197,12 @@ public class FormMain extends JFrame {
                 } catch (InterruptedException ignored) { }
             }
         }).start();
-        final List<File> finalFiles = files;
+        final var finalFiles = files;
         new Thread(() -> {
             for (File file : finalFiles)
                 pool.submit(() -> {
                     setStatus("Upload " + file.getName());
-                    Transfer transfer = new Transfer(file);
+                    var transfer = new Transfer(file);
                     try {
                         transfer.uploadFileToServer();
                     } catch (IOException e) {
@@ -214,8 +225,8 @@ public class FormMain extends JFrame {
 
     @SuppressWarnings("ConstantConditions")
     private List<File> unpackFilePaths(List<File> files) {
-        List<File> result = new ArrayList<>();
-        final List<File> dirs = files.stream()
+        var result = new ArrayList<File>();
+        final var dirs = files.stream()
               .filter(File::isDirectory)
               .collect(Collectors.toList());
 
@@ -226,10 +237,10 @@ public class FormMain extends JFrame {
     }
 
     private List<Transfer> getSelectedTransfers() {
-        int[] indexes = tblTransfers.getSelectedRows();
-        List<Transfer> tmpTransfers = new ArrayList<>();
+        var indexes = tblTransfers.getSelectedRows();
+        var tmpTransfers = new ArrayList<Transfer>();
         for (int index : indexes) {
-            String url = (String) tblTransfers.getModel().getValueAt(index, INDEX_URL);
+            var url = (String) tblTransfers.getModel().getValueAt(index, INDEX_URL);
             if (url != null)
                 tmpTransfers.add(DB.get().getTransferByUrl(url));
         }
@@ -237,13 +248,13 @@ public class FormMain extends JFrame {
     }
 
     private synchronized void updateTranferTable() {
-        DefaultTableModel model = (DefaultTableModel) tblTransfers.getModel();
+        var model = (DefaultTableModel) tblTransfers.getModel();
         while (model.getRowCount() > 0) {
             model.getDataVector().removeAllElements();
             model.fireTableDataChanged();
         }
-        for (Transfer t : DB.get().getTransfers()) {
-            final Object[] obj = new Object[]{
+        for (var t : DB.get().getTransfers()) {
+            final var obj = new Object[]{
                   t.getFile().getName(),
                   t.getUrl(),
                   t.getFormattedSize(),
@@ -259,14 +270,14 @@ public class FormMain extends JFrame {
         tblTransfers.setShowGrid(true);
         tblTransfers.setSelectionMode(MULTIPLE_INTERVAL_SELECTION);
 
-        final DefaultTableModel model = (DefaultTableModel) tblTransfers.getModel();
+        var model = (DefaultTableModel) tblTransfers.getModel();
         model.addColumn("Filename");
         model.addColumn("Url");
         model.addColumn("Size");
         model.addColumn("Type");
         model.addColumn("Upload time");
 
-        final TableColumnModel columnModel = tblTransfers.getColumnModel();
+        var columnModel = tblTransfers.getColumnModel();
         columnModel.getColumn(INDEX_FILE).setPreferredWidth(150);
         columnModel.getColumn(INDEX_URL).setPreferredWidth(250);
         columnModel.getColumn(INDEX_SIZE).setPreferredWidth(10);
@@ -284,10 +295,13 @@ public class FormMain extends JFrame {
 
     private void showInTC(String path) {
         try {
-            String totalCmd = "C:\\totalcmd\\TOTALCMD64.EXE ";
-            Runtime.getRuntime().exec(totalCmd + path);
+            var totalCmd = getTotalCmd();
+            Runtime.getRuntime().exec(totalCmd + " " + path);
         } catch (IOException e1) { setStatus(e1.getLocalizedMessage()); }
     }
+
+    // TODO
+    private String getTotalCmd() { return "C:\\totalcmd\\TOTALCMD64.EXE"; }
 
     private void setStatus(String newStatus) { new Thread(() -> lblStatus.setText(newStatus)).start(); }
 
