@@ -28,17 +28,20 @@ public class DB {
         else readDb();
     }
 
-    public static DB get() { return instance == null ? instance = new DB() : instance; }
+    public static DB get() {
+        return instance == null
+              ? instance = new DB()
+              : instance;
+    }
 
-    public void putNewRecord(Transfer transfer) {
-        transfers.add(transfer);
+    public synchronized void putNewRecord(Transfer transfer) {
+        transfers.add(0, transfer);
         saveDb();
     }
 
     private void readDb() {
         try (FileReader fileReader = new FileReader(DB_FILE)) {
-            transfers = new Gson()
-                  .fromJson(fileReader, TYPE_LIST_TRANSFER);
+            transfers = new Gson().fromJson(fileReader, TYPE_LIST_TRANSFER);
         } catch (IOException e) { e.printStackTrace(); }
     }
 
@@ -50,14 +53,6 @@ public class DB {
         try (FileWriter fw = new FileWriter(DB_FILE)) {
             fw.write(json);
         } catch (IOException e) { e.printStackTrace(); }
-    }
-
-    public void removeTransfer(String url) {
-        Transfer transferToDelete = getTransferByUrl(url);
-        if (transferToDelete == null)
-            return;
-        transfers.remove(transferToDelete);
-        saveDb();
     }
 
     public Transfer getTransferByUrl(String url) {
