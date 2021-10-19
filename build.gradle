@@ -57,10 +57,23 @@ dependencies {
     implementation 'org.projectlombok:lombok:1.18.20'
     annotationProcessor 'org.projectlombok:lombok:1.18.20'
     implementation group: 'com.google.code.gson', name: 'gson', version: '2.8.6'
-    implementation group: 'org.jsoup', name: 'jsoup', version: '1.14.2'
+    //implementation group: 'org.jsoup', name: 'jsoup', version: '1.14.3'
+    implementation 'org.apache.httpcomponents:httpclient:4.5.13'
     implementation group: 'com.jtattoo', name: 'JTattoo', version: '1.6.13'
     implementation files('lib/forms_rt.jar')
 
 
-    //   testCompile group: 'junit', name: 'junit', version: '4.12'
+    // test
+    testCompileOnly 'org.projectlombok:lombok:1.18.22'
+    testAnnotationProcessor 'org.projectlombok:lombok:1.18.22'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.3.1'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.3.1'
+}
+
+test {
+    useJUnitPlatform {
+        includeTags 'enable'
+        excludeTags 'disable'
+    }
 }

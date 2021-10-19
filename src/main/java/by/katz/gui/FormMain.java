@@ -6,6 +6,7 @@ import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumnModel;
@@ -17,6 +18,7 @@ import java.awt.dnd.DropTarget;
 import java.awt.dnd.DropTargetDropEvent;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -49,6 +51,11 @@ public class FormMain extends JFrame {
         setContentPane(pnlMain);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setSize(850, 500);
+        try {
+            final InputStream stream = this.getClass().getClassLoader().getResourceAsStream("transferShWrapper.png");
+            if (stream != null)
+                setIconImage(ImageIO.read(stream));
+        } catch (IOException ignored) {}
         setLocationRelativeTo(null);
         setupTable();
         updateTranferTable();
@@ -74,14 +81,16 @@ public class FormMain extends JFrame {
             List<Transfer> transfers = getSelectedTransfers();
             if (transfers.size() > 0)
                 showInTC(transfers.get(0)
-                    .getFile()
-                    .getPath());
+                      .getFile()
+                      .getPath());
         });
         btnDelete.addActionListener(e -> {
             List<Transfer> transfers = getSelectedTransfers();
             transfers.forEach(t -> {
-                if (t.deleteFromServer())
+                if (t.deleteFromServer()) {
+                    DB.get().removeTransfer(t);
                     updateTranferTable();
+                }
             });
         });
         pnlMain.setDropTarget(new DropTarget() {
@@ -111,11 +120,11 @@ public class FormMain extends JFrame {
         final int NO = 1;
         if (files.size() > 1) {
             long totalSize = files.stream()
-                .mapToLong(File::length)
-                .sum();
+                  .mapToLong(File::length)
+                  .sum();
             String msg = "You want to upload " + files.size() + " files, size: " + getFormattedSize(totalSize);
             int input = JOptionPane.showConfirmDialog(null, msg,
-                "Confirm", JOptionPane.YES_NO_OPTION);
+                  "Confirm", JOptionPane.YES_NO_OPTION);
             if (input == NO)
                 return;
         }
@@ -164,12 +173,12 @@ public class FormMain extends JFrame {
     private List<File> unpackFilePaths(List<File> files) {
         List<File> result = new ArrayList<>();
         final List<File> dirs = files.stream()
-            .filter(File::isDirectory)
-            .collect(Collectors.toList());
+              .filter(File::isDirectory)
+              .collect(Collectors.toList());
 
         dirs.stream()
-            .filter(d -> d != null && d.listFiles() != null)
-            .forEach(d -> result.addAll(Arrays.asList(d.listFiles())));
+              .filter(d -> d != null && d.listFiles() != null)
+              .forEach(d -> result.addAll(Arrays.asList(d.listFiles())));
         return result;
     }
 
@@ -192,11 +201,11 @@ public class FormMain extends JFrame {
         }
         for (Transfer t : DB.get().getTransfers()) {
             final Object[] obj = new Object[]{
-                t.getFile().getName(),
-                t.getUrl(),
-                t.getFormattedSize(),
-                t.getMimeType(),
-                t.getFormattedDate()
+                  t.getFile().getName(),
+                  t.getUrl(),
+                  t.getFormattedSize(),
+                  t.getMimeType(),
+                  t.getFormattedDate()
             };
             model.insertRow(0, obj);
         }
@@ -225,8 +234,8 @@ public class FormMain extends JFrame {
 
     private static void copyToCB(String str) {
         Toolkit.getDefaultToolkit()
-            .getSystemClipboard()
-            .setContents(new StringSelection(str), null);
+              .getSystemClipboard()
+              .setContents(new StringSelection(str), null);
     }
 
     private void showInTC(String path) {

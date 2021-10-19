@@ -38,21 +38,21 @@ public class DB {
     private void readDb() {
         try (FileReader fileReader = new FileReader(DB_FILE)) {
             transfers = new Gson()
-                    .fromJson(fileReader, TYPE_LIST_TRANSFER);
+                  .fromJson(fileReader, TYPE_LIST_TRANSFER);
         } catch (IOException e) { e.printStackTrace(); }
     }
 
     private synchronized void saveDb() {
         String json = new GsonBuilder()
-                .setPrettyPrinting()
-                .create()
-                .toJson(transfers);
+              .setPrettyPrinting()
+              .create()
+              .toJson(transfers);
         try (FileWriter fw = new FileWriter(DB_FILE)) {
             fw.write(json);
         } catch (IOException e) { e.printStackTrace(); }
     }
 
-    void removeTransfer(String url) {
+    public void removeTransfer(String url) {
         Transfer transferToDelete = getTransferByUrl(url);
         if (transferToDelete == null)
             return;
@@ -62,8 +62,13 @@ public class DB {
 
     public Transfer getTransferByUrl(String url) {
         return transfers.stream()
-                .filter(t -> t.getUrl().equals(url))
-                .findFirst()
-                .orElse(null);
+              .filter(t -> t.getUrl().equals(url))
+              .findFirst()
+              .orElse(null);
+    }
+
+    public void removeTransfer(Transfer t) {
+        transfers.remove(t);
+        saveDb();
     }
 }
